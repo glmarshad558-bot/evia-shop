@@ -8,8 +8,8 @@ app = Flask(__name__)
 app.config['SECRET_KEY'] = 'mysupersecretshop'
 basedir = os.path.abspath(os.path.dirname(__file__))
 
-# --- FIXED DATABASE NAME ---
-# Changed 'shop.dp' to 'shop.db' to match your GitHub file
+# --- CONFIGURATION FIXES ---
+# 1. Changed extension to .db for better compatibility
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(basedir, 'shop.db')
 app.config['UPLOAD_FOLDER'] = os.path.join('static', 'uploads')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
@@ -18,7 +18,7 @@ db = SQLAlchemy(app)
 login_manager = LoginManager(app)
 login_manager.login_view = 'login'
 
-# --- MASTER SECRET CONFIG ---
+# --- ADMIN CONFIG ---
 ADMIN_SECRET_PASS = "razi1321"
 
 # --- MODELS ---
@@ -46,15 +46,7 @@ class Order(db.Model):
 def load_user(user_id):
     return User.query.get(int(user_id))
 
-# --- ROUTES ---
-
-@app.route('/')
-def index():
-    q = request.args.get('q')
-    query = Product.query
-    if q: query = query.filter(Product.name.contains(q))
-    return render_template('index.html', products=query.all())
-
+# --- ADMIN ROUTES ---
 @app.route('/admin_lock', methods=['GET', 'POST'])
 def admin_lock():
     if request.method == 'POST':
@@ -64,6 +56,11 @@ def admin_lock():
         flash("Invalid Master Key!")
     return render_template('admin_lock.html')
 
+@app.route('/admin_logout')
+def admin_logout():
+    session.pop('admin_verified', None)
+    return redirect(url_for('index'))
+
 @app.route('/admin', methods=['GET', 'POST'])
 def admin():
     if not session.get('admin_verified'):
@@ -72,7 +69,6 @@ def admin():
     if request.method == 'POST':
         f = request.files.get('image')
         if f:
-            # Ensure upload folder exists before saving
             if not os.path.exists(app.config['UPLOAD_FOLDER']):
                 os.makedirs(app.config['UPLOAD_FOLDER'])
             f.save(os.path.join(app.config['UPLOAD_FOLDER'], f.filename))
@@ -92,6 +88,64 @@ def admin():
     orders = Order.query.order_by(Order.id.desc()).all() 
     return render_template('admin.html', products=products, orders=orders)
 
+@app.route('/delete/<int:id>')
+def delete_product(id):
+    if session.get('admin_verified'):
+        p = Product.query.get(id)
+        if p:
+            db.session.delete(p)
+            db.session.commit()
+    return redirect(url_for('admin'))
+
+@app.route('/delete_order/<int:id>')
+def delete_order(id):
+    if session.get('admin_verified'):
+        order = Order.query.get(id)
+        if order:
+            db.session.delete(order)
+            db.session.commit()
+            flash("Order record cleared.")
+    return redirect(url_for('admin'))
+
+# --- USER SHOP ROUTES ---
+@app.route('/')
+def index():
+    q = request.args.get('q')
+    query = Product.query
+    if q: query = query.filter(Product.name.contains(q))
+    return render_template('index.html', products=query.all())
+
+@app.route('/buy/<int:id>')
+def buy_now(id):
+    if not current_user.is_authenticated:
+        flash("Please login or signup to buy!")
+        return redirect(url_for('signup'))
+    session['cart'] = [id] 
+    return redirect(url_for('checkout'))
+
+@app.route('/checkout', methods=['GET', 'POST'])
+@login_required
+def checkout():
+    cart_ids = session.get('cart', [])
+    items = [Product.query.get(i) for i in cart_ids if Product.query.get(i)]
+    total = sum(i.price for i in items)
+
+    if request.method == 'POST':
+        addr = request.form.get('address')
+        pay_id = request.form.get('pay_number')
+        summary = f"ITEMS: {', '.join([i.name for i in items])} | CONTACT: {pay_id} | ADDR: {addr}"
+
+        new_order = Order(product_details=summary, total_price=total, user_id=current_user.id)
+        db.session.add(new_order)
+        db.session.commit()
+        
+        session.pop('cart', None)
+        flash("Order placed!")
+        return redirect(url_for('profile'))
+
+    return render_template('checkout.html', items=items, total=total)
+
+# --- AUTH ROUTES ---
 @app.route('/signup', methods=['GET', 'POST'])
 def signup():
     if request.method == 'POST':
@@ -126,16 +180,26 @@ def profile():
     my_orders = Order.query.filter_by(user_id=current_user.id).all()
     return render_template('profile.html', orders=my_orders)
 
-# --- APP STARTUP ---
-if __name__ == '__main__':
-    with app.app_context():
-        # THIS CREATES THE TABLES AUTOMATICALLY
-        db.create_all() 
-        if not os.path.exists(app.config['UPLOAD_FOLDER']): 
-            os.makedirs(app.config['UPLOAD_FOLDER'])
-    
-    port = int(os.environ.get("PORT", 10000))
-    app.run(host='0.0.0.0', port=port)get to let Render choose the port automatically
-    port = int(os.environ.get("PORT", 10000))
+@app.route('/cancel_order/<int:id>')
+@login_required
+def cancel_order(id):
+    order = Order.query.get(id)
+    if order and order.user_id == current_user.id:
+        db.session.delete(order)
+        db.session.commit()
+        flash("Order cancelled.")
+    return redirect(url_for('profile'))
 
+# --- STARTUP ---
+if __name__ == '__main__':
+    # Ensure directories exist
+    if not os.path.exists(app.config['UPLOAD_FOLDER']): 
+        os.makedirs(app.config['UPLOAD_FOLDER'])
+    
+    # Setup Database
+    with app.app_context(): 
+        db.create_all()
+    
+    # Render Dynamic Port Binding
+    port = int(os.environ.get("PORT", 10000))
     app.run(host='0.0.0.0', port=port)
