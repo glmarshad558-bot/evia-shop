@@ -49,12 +49,13 @@ class Order(db.Model):
 def load_user(user_id):
     return User.query.get(int(user_id))
 
+
 # --- DATABASE INITIALIZATION ---
 with app.app_context():
-    # STEP 1: Remove the '#' below to clear the old broken database
-    db.drop_all() 
+    # Adding the '#' here is the most important part to save your data!
+    # db.drop_all() 
     
-    # STEP 2: This creates the new tables with 'image_2' and 'description'
+    # This line ensures your new image_2 and description columns stay active
     db.create_all()
 # --- ADMIN ROUTES ---
 @app.route('/admin_lock', methods=['GET', 'POST'])
@@ -193,4 +194,5 @@ def profile():
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 10000))
     app.run(host='0.0.0.0', port=port)
+
 
