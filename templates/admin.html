@@ -8,28 +8,21 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         body { background-color: #f4f7f6; font-family: 'Inter', sans-serif; }
-        
-        /* Sidebar styling */
         .sidebar { background: #1a252f; color: white; padding-top: 20px; transition: all 0.3s; z-index: 1000; }
         .sidebar a { color: #bdc3c7; text-decoration: none; display: block; padding: 12px 20px; border-radius: 8px; margin: 0 10px 5px 10px; }
         .sidebar a:hover { background: #2c3e50; color: white; }
         .sidebar .active { background: #3498db; color: white; }
 
-        /* DESKTOP VIEW (Screens wider than 768px) */
         @media (min-width: 768px) {
             .sidebar { position: fixed; width: 240px; height: 100vh; }
             .main-content { margin-left: 240px; width: calc(100% - 240px); }
         }
 
-        /* MOBILE VIEW (iPhone, Vivo, Android - 375px and up) */
         @media (max-width: 767.98px) {
             .sidebar { width: 100%; height: auto; position: relative; padding: 10px 0; }
-            .sidebar h4 { font-size: 1.1rem; margin-bottom: 10px !important; }
             .sidebar-nav { display: flex; flex-wrap: nowrap; overflow-x: auto; padding: 0 10px; }
             .sidebar a { white-space: nowrap; padding: 8px 15px; margin: 0 5px 0 0; font-size: 13px; flex: 0 0 auto; }
             .main-content { margin-left: 0; padding: 15px !important; }
-            .admin-card { padding: 15px !important; }
-            h3 { font-size: 1.4rem; }
         }
 
         .admin-card { border: none; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); margin-bottom: 20px; background: white; }
@@ -68,24 +61,35 @@
             {% endwith %}
 
             <div class="row">
-                <div class="col-lg-4">
+                <div class="col-lg-5">
                     <div class="card admin-card p-4">
-                        <h5 class="mb-3 fw-bold">Add New Product</h5>
+                        <h5 class="mb-3 fw-bold text-primary">Add New Product</h5>
                         <form action="/admin" method="POST">
                             <input type="text" name="name" class="form-control mb-2" placeholder="Product Name" required>
+                            
                             <div class="row g-2 mb-2">
-                                <div class="col-6"><input type="number" name="price" class="form-control" placeholder="Price" required></div>
+                                <div class="col-6"><input type="number" name="price" class="form-control" placeholder="Price (₹)" required></div>
                                 <div class="col-6"><input type="number" name="stock" class="form-control" placeholder="Stock" required></div>
                             </div>
-                            <input type="text" name="category" class="form-control mb-2" placeholder="Category">
-                            <label class="small text-muted">Direct Image Link (i.ibb.co):</label>
-                            <input type="text" name="image_url" class="form-control mb-3" placeholder="https://i.ibb.co/..." required>
-                            <button class="btn btn-primary w-100 fw-bold">Publish to Store</button>
+
+                            <input type="text" name="category" class="form-control mb-2" placeholder="Category (e.g. Tees)">
+                            
+                            <textarea name="description" class="form-control mb-2" placeholder="Product Description (Materials, size, etc.)" rows="3"></textarea>
+
+                            <label class="small text-muted">Main Image Link:</label>
+                            <input type="text" name="image_url" class="form-control mb-2" placeholder="https://..." required>
+                            
+                            <label class="small text-muted">Second Image Link (Optional):</label>
+                            <input type="text" name="image_url_2" class="form-control mb-3" placeholder="https://...">
+
+                            <button class="btn btn-primary w-100 fw-bold shadow-sm">
+                                <i class="fa fa-plus-circle"></i> Publish to Store
+                            </button>
                         </form>
                     </div>
                 </div>
 
-                <div id="orders" class="col-lg-8">
+                <div id="orders" class="col-lg-7">
                     <div class="card admin-card p-4">
                         <h5 class="mb-3 fw-bold">Recent Orders</h5>
                         <div class="table-responsive">
@@ -125,7 +129,8 @@
                             <div class="p-2 border rounded h-100 d-flex flex-column">
                                 <img src="{{ p.image }}" class="product-item-img mb-2" onerror="this.src='https://placehold.co/100x100?text=Error'">
                                 <p class="small mb-2 text-truncate fw-bold">{{ p.name }}</p>
-                                <a href="/delete/{{ p.id }}" class="btn btn-sm btn-outline-danger w-100 mt-auto py-1" onclick="return confirm('Delete?')">Delete</a>
+                                <p class="small text-success mb-2">₹{{ p.price }}</p>
+                                <a href="/delete/{{ p.id }}" class="btn btn-sm btn-outline-danger w-100 mt-auto py-1" onclick="return confirm('Delete this product?')">Delete</a>
                             </div>
                         </div>
                         {% endfor %}
