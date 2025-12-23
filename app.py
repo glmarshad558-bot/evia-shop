@@ -8,13 +8,11 @@ app = Flask(__name__)
 app.config['SECRET_KEY'] = 'mysupersecretshop'
 
 # --- CONFIGURATION ---
-# Check Render for the DATABASE_URL link
 database_url = os.getenv("DATABASE_URL")
 if database_url and database_url.startswith("postgres://"):
-    database_url = database_url.replace("postgres://", "postgresql://", 1) #
+    database_url = database_url.replace("postgres://", "postgresql://", 1)
 
 app.config['SQLALCHEMY_DATABASE_URI'] = database_url or 'sqlite:///shop.db'
-app.config['UPLOAD_FOLDER'] = os.path.join('static', 'uploads')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
@@ -35,7 +33,8 @@ class Product(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
     price = db.Column(db.Integer, nullable=False)
-    image = db.Column(db.String(100))
+    # Increased to 500 characters to hold long web links
+    image = db.Column(db.String(500)) 
     stock = db.Column(db.Integer, default=10)
     category = db.Column(db.String(50))
 
@@ -49,10 +48,9 @@ class Order(db.Model):
 def load_user(user_id):
     return User.query.get(int(user_id))
 
-# --- DATABASE INITIALIZATION FIX ---
-# This block runs even when Gunicorn starts the app
+# --- DATABASE INITIALIZATION ---
 with app.app_context():
-    db.create_all() # This creates your tables in evia-db
+    db.create_all()
 
 # --- ADMIN ROUTES ---
 @app.route('/admin_lock', methods=['GET', 'POST'])
@@ -75,22 +73,20 @@ def admin():
         return redirect(url_for('admin_lock'))
 
     if request.method == 'POST':
-        f = request.files.get('image')
-        if f:
-            if not os.path.exists(app.config['UPLOAD_FOLDER']):
-                os.makedirs(app.config['UPLOAD_FOLDER'])
-            f.save(os.path.join(app.config['UPLOAD_FOLDER'], f.filename))
-            p = Product(
-                name=request.form.get('name'), 
-                price=request.form.get('price'), 
-                stock=request.form.get('stock'), 
-                category=request.form.get('category'), 
-                image=f.filename
-            )
-            db.session.add(p)
-            db.session.commit()
-            flash("Product added successfully!")
-            return redirect(url_for('admin'))
+        # FIXED: Now takes a URL link instead of a file upload
+        image_url = request.form.get('image_url') 
+        
+        p = Product(
+            name=request.form.get('name'), 
+            price=request.form.get('price'), 
+            stock=request.form.get('stock'), 
+            category=request.form.get('category'), 
+            image=image_url 
+        )
+        db.session.add(p)
+        db.session.commit()
+        flash("Product added successfully with image link!")
+        return redirect(url_for('admin'))
     
     products = Product.query.all()
     orders = Order.query.order_by(Order.id.desc()).all() 
@@ -103,16 +99,6 @@ def delete_product(id):
         if p:
             db.session.delete(p)
             db.session.commit()
-    return redirect(url_for('admin'))
-
-@app.route('/delete_order/<int:id>')
-def delete_order(id):
-    if session.get('admin_verified'):
-        order = Order.query.get(id)
-        if order:
-            db.session.delete(order)
-            db.session.commit()
-            flash("Order record cleared.")
     return redirect(url_for('admin'))
 
 # --- USER SHOP ROUTES ---
@@ -188,17 +174,6 @@ def profile():
     my_orders = Order.query.filter_by(user_id=current_user.id).all()
     return render_template('profile.html', orders=my_orders)
 
-@app.route('/cancel_order/<int:id>')
-@login_required
-def cancel_order(id):
-    order = Order.query.get(id)
-    if order and order.user_id == current_user.id:
-        db.session.delete(order)
-        db.session.commit()
-        flash("Order cancelled.")
-    return redirect(url_for('profile'))
-
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 10000))
     app.run(host='0.0.0.0', port=port)
-
