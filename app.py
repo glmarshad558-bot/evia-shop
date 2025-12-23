@@ -26,7 +26,7 @@ ADMIN_SECRET_PASS = "razi1321"
 class User(db.Model, UserMixin):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(150), unique=True, nullable=False) 
-    password = db.Column(db.String(500), nullable=False) # Fixes "Value too long" error
+    password = db.Column(db.String(500), nullable=False) # FIX: Increased size for hashed passwords
     orders = db.relationship('Order', backref='customer', lazy=True)
 
 class Product(db.Model):
@@ -34,8 +34,8 @@ class Product(db.Model):
     name = db.Column(db.String(100), nullable=False)
     price = db.Column(db.Integer, nullable=False)
     image = db.Column(db.String(500)) 
-    image_2 = db.Column(db.String(500)) # Added for detail page
-    description = db.Column(db.Text)    # Added for detail page
+    image_2 = db.Column(db.String(500)) # FIX: Now exists in code
+    description = db.Column(db.Text)    # FIX: Now exists in code
     stock = db.Column(db.Integer, default=10)
     category = db.Column(db.String(50))
 
@@ -51,8 +51,10 @@ def load_user(user_id):
 
 # --- DATABASE INITIALIZATION ---
 with app.app_context():
-    # STEP 1: Uncomment the line below, save, and run the app ONCE to fix the database columns.
-    # STEP 2: After the site opens, put the '#' back in front of db.drop_all() and save again.
+    # IMPORTANT: To fix the "column does not exist" and "value too long" errors:
+    # 1. Remove the '#' from the line below (db.drop_all())
+    # 2. Deploy to Render and open the site once.
+    # 3. Put the '#' back and deploy again to keep your data.
     # db.drop_all() 
     db.create_all()
 
@@ -77,18 +79,22 @@ def admin():
         return redirect(url_for('admin_lock'))
 
     if request.method == 'POST':
-        p = Product(
-            name=request.form.get('name'), 
-            price=request.form.get('price'), 
-            stock=request.form.get('stock'), 
-            category=request.form.get('category'), 
-            description=request.form.get('description'),
-            image=request.form.get('image_url'),
-            image_2=request.form.get('image_url_2')
-        )
-        db.session.add(p)
-        db.session.commit()
-        flash("Product added successfully!")
+        try:
+            p = Product(
+                name=request.form.get('name'), 
+                price=request.form.get('price'), 
+                stock=request.form.get('stock'), 
+                category=request.form.get('category'), 
+                description=request.form.get('description'),
+                image=request.form.get('image_url'),
+                image_2=request.form.get('image_url_2')
+            )
+            db.session.add(p)
+            db.session.commit()
+            flash("Product added successfully!")
+        except Exception as e:
+            db.session.rollback()
+            flash(f"Error: {str(e)}")
         return redirect(url_for('admin'))
     
     products = Product.query.all()
