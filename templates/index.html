@@ -2,98 +2,181 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>E-Shop | Home</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>EVIA | Premium Surplus</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
     <style>
-        .product-card:hover { transform: translateY(-5px); transition: 0.3s; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
-        .navbar-brand { font-weight: bold; color: #fb641b !important; } 
-        .btn-buy { background-color: #ff9f00; color: white; border: none; }
-        .btn-buy:hover { background-color: #f39200; }
-        .nav-link:hover { color: #ff9f00 !important; }
+        :root { --black: #111111; --gray: #f8f8f8; --muted: #757575; }
+        
+        body { 
+            background-color: #ffffff; 
+            font-family: 'Inter', sans-serif; 
+            color: var(--black);
+            margin: 0; padding: 0;
+            overflow-x: hidden;
+        }
+
+        /* --- MODERN NAVIGATION --- */
+        .navbar {
+            background: rgba(255, 255, 255, 0.98);
+            border-bottom: 1px solid #eee;
+            padding: 15px 0;
+        }
+        .navbar-brand { font-weight: 800; letter-spacing: 2px; font-size: 1.4rem; color: var(--black) !important; }
+
+        /* --- HERO SECTION --- */
+        .hero {
+            background: var(--gray);
+            padding: 60px 20px;
+            text-align: center;
+            border-bottom: 1px solid #eee;
+        }
+        .hero h1 { font-weight: 800; text-transform: uppercase; letter-spacing: -1px; font-size: 2.2rem; }
+        .hero p { color: var(--muted); font-size: 0.9rem; letter-spacing: 1px; }
+
+        /* --- PERFECT PRODUCT GRID (FIGMA STYLE) --- */
+        .product-card {
+            border: none;
+            background: none;
+            margin-bottom: 20px;
+        }
+        
+        .img-container {
+            width: 100%;
+            aspect-ratio: 9 / 14; /* Perfect for your 506x860 images */
+            overflow: hidden;
+            background: var(--gray);
+            position: relative;
+        }
+
+        .img-container img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            object-position: center;
+            transition: transform 0.6s ease;
+        }
+
+        .product-card:hover img { transform: scale(1.05); }
+
+        .product-info { padding: 12px 0; }
+        .product-title { 
+            font-size: 0.85rem; 
+            font-weight: 600; 
+            text-transform: uppercase; 
+            margin-bottom: 4px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .product-price { font-size: 0.95rem; color: var(--muted); margin-bottom: 12px; }
+
+        /* --- ZARA STYLE BUTTON --- */
+        .btn-buy {
+            background: var(--black);
+            color: white;
+            border-radius: 0;
+            font-size: 0.75rem;
+            font-weight: 600;
+            letter-spacing: 1.5px;
+            padding: 12px;
+            text-transform: uppercase;
+            border: 1px solid var(--black);
+            transition: 0.3s;
+        }
+        .btn-buy:hover { background: white; color: var(--black); }
+
+        /* --- MOBILE OPTIMIZATION (375px / iPhone / Vivo) --- */
+        @media (max-width: 767px) {
+            .container { padding-left: 15px; padding-right: 15px; }
+            .hero { padding: 40px 15px; }
+            .hero h1 { font-size: 1.6rem; }
+            
+            /* Two items per row on mobile */
+            .row-mobile { 
+                display: flex;
+                flex-wrap: wrap;
+                margin-left: -5px;
+                margin-right: -5px;
+            }
+            .col-mobile {
+                flex: 0 0 50%;
+                max-width: 50%;
+                padding-left: 5px;
+                padding-right: 5px;
+            }
+            .img-container { aspect-ratio: 9 / 13; } /* Slightly shorter for mobile scroll */
+        }
     </style>
 </head>
-<body class="bg-light">
+<body>
 
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark sticky-top">
-        <div class="container">
-            <a class="navbar-brand" href="/">E-SHOP</a>
+    <nav class="navbar sticky-top">
+        <div class="container d-flex justify-content-between align-items-center">
+            <a class="navbar-brand" href="/">EVIA.</a>
             
-            <form class="d-flex mx-auto w-50" action="/" method="GET">
-                <input class="form-control me-2" type="search" name="q" placeholder="Search for products..." aria-label="Search">
-                <button class="btn btn-outline-light" type="submit">Search</button>
-            </form>
-
-            <div class="navbar-nav ms-auto align-items-center">
+            <div class="nav-icons d-flex align-items-center">
                 {% if current_user.is_authenticated %}
-                    <a class="nav-item nav-link text-white me-3" href="/profile">
-                        <i class="fa fa-shopping-bag text-warning"></i> MY ORDERS
-                    </a>
-                    
-                    <span class="nav-item nav-link text-info me-2">
-                        <i class="fa fa-user"></i> {{ current_user.username|upper }}
-                    </span>
-
-                    <a class="nav-item nav-link btn btn-outline-danger btn-sm" href="/logout">Logout</a>
+                    <a href="/profile" class="text-dark me-3"><i class="fa fa-shopping-bag"></i></a>
+                    <a href="/logout" class="btn btn-sm btn-outline-dark rounded-0 px-2" style="font-size: 10px;">LOGOUT</a>
                 {% else %}
-                    <a class="nav-item nav-link" href="/login">Login</a>
-                    <a class="nav-item nav-link btn btn-primary btn-sm text-white ms-2" href="/signup">Sign Up</a>
+                    <a href="/login" class="text-dark small fw-bold text-decoration-none">LOGIN</a>
                 {% endif %}
-                
-                <a class="nav-item nav-link ms-3" href="/admin_lock"><i class="fa fa-lock"></i> Admin</a>
             </div>
         </div>
     </nav>
 
-    <div class="container mt-4">
-        <div class="bg-primary text-white p-5 rounded shadow-sm text-center">
-            <h1 class="display-4 fw-bold">EVIA SHOPING TO YOU</h1>
-            <p class="lead">SURPLUS TEES VINTAGE PANTS & JACKETS</p>
+    <div class="hero">
+        <div class="container">
+            <h1>EVIA SURPLUS</h1>
+            <p>CURATED VINTAGE & STREETWEAR</p>
         </div>
     </div>
 
     <div class="container mt-5">
-        <h3 class="mb-4"><i class="fa fa-fire text-danger"></i> Featured Products</h3>
-        <div class="row">
+        <div class="d-flex justify-content-between align-items-end mb-4 px-1">
+            <h5 class="fw-bold m-0" style="letter-spacing: 1px;">NEW DROPS</h5>
+            <span class="small text-muted">SHIPPING PAN INDIA</span>
+        </div>
+
+        <div class="row row-mobile">
             {% if products %}
                 {% for p in products %}
-                <div class="col-6 col-md-4 col-lg-3 mb-4">
-                    <div class="card h-100 border-0 shadow-sm product-card">
-                        <div style="height: 200px; overflow: hidden;">
-                            <img src="{{ p.image }}" 
-                                 class="card-img-top p-3" 
-                                 alt="{{ p.name }}" 
-                                 style="object-fit: contain; height: 100%; width: 100%;">
+                <div class="col-mobile col-md-4 col-lg-3">
+                    <div class="product-card">
+                        <div class="img-container">
+                            <img src="{{ p.image }}" alt="{{ p.name }}" onerror="this.src='https://placehold.co/506x860?text=EVIA+CLOTHING'">
                         </div>
-                        
-                        <div class="card-body">
-                            <h6 class="card-title text-truncate">{{ p.name }}</h6>
-                            <p class="text-success fw-bold mb-1">₹{{ p.price }}</p>
-                            <small class="text-muted d-block mb-3"><i class="fa fa-truck"></i> ALL INDIA AVAILABLE</small>
-                            
-                            <a href="{{ url_for('buy_now', id=p.id) }}" class="btn btn-buy w-100 fw-bold">
-                                <i class="fa fa-bolt"></i> BUY NOW
+                        <div class="product-info">
+                            <h6 class="product-title">{{ p.name }}</h6>
+                            <p class="product-price">₹{{ p.price }}</p>
+                            <a href="{{ url_for('buy_now', id=p.id) }}" class="btn btn-buy w-100">
+                                Add to Bag
                             </a>
                         </div>
                     </div>
                 </div>
                 {% endfor %}
             {% else %}
-                <div class="col-12 text-center mt-5">
-                    <i class="fa fa-search fa-3x text-muted mb-3"></i>
-                    <h4>No products found matching your search.</h4>
-                    <a href="/" class="btn btn-primary mt-2">Back to Home</a>
+                <div class="col-12 text-center py-5">
+                    <p class="text-muted small">NO ITEMS AVAILABLE CURRENTLY.</p>
                 </div>
             {% endif %}
         </div>
     </div>
 
-    <footer class="bg-dark text-white mt-5 py-4">
+    <footer class="py-5 mt-5 border-top bg-light">
         <div class="container text-center">
-            <p class="mb-0">&copy; 2025 Sahal's E-SHOP. All Rights Reserved.</p>
-                <p class="mb-0">&copy; PHONE:7760463383 & 9686651918</p>
-            <small class="text-muted">Secure Shopping | Fast Delivery | Easy Returns</small>
+            <h6 class="fw-extrabold mb-3">EVIA.</h6>
+            <p class="small text-muted mb-1">CUSTOMER SUPPORT</p>
+            <p class="small fw-bold mb-4">+91 7760463383 | +91 9686651918</p>
+            <div class="d-flex justify-content-center gap-3 mb-4">
+                <a href="#" class="text-dark"><i class="fab fa-instagram"></i></a>
+                <a href="#" class="text-dark"><i class="fab fa-whatsapp"></i></a>
+            </div>
+            <p class="text-muted" style="font-size: 10px;">&copy; 2025 EVIA SHOPPING. ALL RIGHTS RESERVED.</p>
         </div>
     </footer>
 
