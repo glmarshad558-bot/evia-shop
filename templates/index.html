@@ -7,134 +7,92 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        :root {
-            --fk-blue: #2874f0;
-            --fk-yellow: #fb641b;
-            --amz-orange: #ff9f00;
-        }
-
-        body { background-color: #f1f3f6; font-family: 'Inter', sans-serif; margin: 0; }
-
-        /* --- PROFESSIONAL NAVBAR --- */
-        .navbar { background-color: var(--fk-blue) !important; padding: 10px 0; }
-        .navbar-brand { font-weight: bold; font-style: italic; color: #fff !important; font-size: 20px; }
+        body { background-color: #f8f9fa; font-family: 'Inter', sans-serif; }
         
-        /* Search Bar Desktop */
-        .search-container { max-width: 500px; width: 100%; position: relative; }
-        .search-input { border-radius: 2px 0 0 2px; border: none; height: 36px; font-size: 14px; }
-        .search-btn { border-radius: 0 2px 2px 0; background: #fff; border: none; height: 36px; color: var(--fk-blue); }
-
-        /* --- PRODUCT GRID --- */
-        .product-card { 
-            background: #fff; border-radius: 2px; border: 1px solid #f0f0f0; transition: 0.3s; height: 100%; 
+        /* Fixed Navbar for Admin, Login, and Search */
+        .navbar { background-color: #343a40 !important; }
+        .navbar-brand { font-weight: bold; }
+        
+        /* Fixes the "poor" spacing on 375px mobile screens */
+        @media (max-width: 767px) {
+            .navbar .container { flex-direction: row; flex-wrap: wrap; }
+            .search-form { order: 3; width: 100%; margin-top: 10px; }
+            .nav-auth-links { order: 2; }
+            .product-grid { padding: 0 5px; }
+            .col-6 { padding: 5px !important; }
         }
-        .product-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
 
-        /* Image Sizing (506x860) */
-        .img-wrapper {
+        /* THE PERFECT SIZE (506x860) */
+        .img-container {
             width: 100%;
-            aspect-ratio: 9 / 13;
+            aspect-ratio: 9 / 14; 
             overflow: hidden;
             background: #fff;
-            padding: 5px;
         }
-        .img-wrapper img { width: 100%; height: 100%; object-fit: contain; }
-
-        .price-tag { font-size: 16px; font-weight: 700; color: #212121; }
-        .btn-buy { background: var(--amz-orange); color: #000; font-weight: 700; border-radius: 2px; font-size: 13px; }
-
-        /* --- MOBILE ADJUSTMENTS (375px) --- */
-        @media (max-width: 768px) {
-            .navbar-brand { font-size: 18px; }
-            .mobile-search { padding: 8px 15px; background: var(--fk-blue); }
-            .row-mobile { padding: 5px; }
-            .col-mobile { flex: 0 0 50%; max-width: 50%; padding: 4px; }
-            .display-4 { font-size: 22px; }
+        .img-container img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
         }
+
+        .product-card { border: none; box-shadow: 0 2px 5px rgba(0,0,0,0.1); margin-bottom: 15px; }
     </style>
 </head>
 <body>
 
-    <nav class="navbar sticky-top">
-        <div class="container d-flex align-items-center justify-content-between">
-            <a class="navbar-brand" href="/">EVIA <span style="color:#ffe500; font-size: 14px;">Plus</span></a>
-            
-            <form class="search-container d-none d-md-flex" action="/" method="GET">
-                <input class="form-control search-input" type="search" name="q" placeholder="Search for products, brands and more">
-                <button class="search-btn px-3" type="submit"><i class="fa fa-search"></i></button>
+    <nav class="navbar navbar-expand-lg navbar-dark sticky-top">
+        <div class="container d-flex justify-content-between align-items-center">
+            <a class="navbar-brand" href="/">EVIA</a>
+
+            <form class="search-form d-flex mx-md-auto" action="/" method="GET">
+                <input class="form-control form-control-sm me-2" type="search" name="q" placeholder="Search..." aria-label="Search">
+                <button class="btn btn-outline-light btn-sm" type="submit">Search</button>
             </form>
 
-            <div class="d-flex align-items-center">
+            <div class="nav-auth-links d-flex align-items-center">
                 {% if current_user.is_authenticated %}
-                    <a href="/profile" class="text-white text-decoration-none me-3 small d-none d-sm-block">
-                        <i class="fa fa-shopping-cart"></i> Cart
-                    </a>
-                    <a href="/logout" class="btn btn-light btn-sm fw-bold text-primary px-3">Logout</a>
+                    <a href="/logout" class="btn btn-sm btn-outline-danger ms-2" style="font-size: 12px;">LOGOUT</a>
                 {% else %}
-                    <a href="/login" class="btn btn-light btn-sm fw-bold text-primary px-4">Login</a>
+                    <a href="/login" class="text-white text-decoration-none me-3 small">LOGIN</a>
+                    <a href="/signup" class="btn btn-sm btn-primary py-1" style="font-size: 12px;">SIGNUP</a>
                 {% endif %}
                 
-                <a href="/admin_lock" class="ms-3 text-white"><i class="fa fa-user-lock"></i></a>
+                <a href="/admin" class="ms-3 text-secondary"><i class="fa fa-user-gear"></i></a>
             </div>
         </div>
     </nav>
 
-    <div class="mobile-search d-md-none">
-        <form class="d-flex" action="/" method="GET">
-            <input class="form-control form-control-sm rounded-1" type="search" name="q" placeholder="Search products...">
-        </form>
-    </div>
-
-    <div class="container mt-2">
-        <div class="bg-primary text-white p-4 rounded-1 text-center shadow-sm" style="background: linear-gradient(90deg, #2874f0, #047bd5) !important;">
-            <h2 class="fw-bold mb-1">EVIA SHOPPING</h2>
-            <p class="small mb-0">SURPLUS TEES • VINTAGE PANTS • JACKETS</p>
-        </div>
-    </div>
-
-    <div class="container mt-4">
-        <div class="d-flex justify-content-between align-items-center mb-3">
-            <h6 class="fw-bold m-0">Featured Products</h6>
-            <span class="badge bg-success">Under ₹999</span>
-        </div>
-
-        <div class="row row-mobile">
+    <div class="container mt-4 product-grid">
+        <div class="row">
             {% if products %}
                 {% for p in products %}
-                <div class="col-mobile col-md-4 col-lg-3">
-                    <div class="product-card">
+                <div class="col-6 col-md-4 col-lg-3">
+                    <div class="card product-card">
                         <a href="/product/{{ p.id }}" class="text-decoration-none">
-                            <div class="img-wrapper">
-                                <img src="{{ p.image }}" alt="{{ p.name }}" onerror="this.src='https://placehold.co/506x860?text=EVIA'">
+                            <div class="img-container">
+                                <img src="{{ p.image }}" alt="{{ p.name }}" onerror="this.src='https://placehold.co/506x860?text=Product'">
                             </div>
-                            <div class="p-2">
-                                <p class="text-dark small mb-1 text-truncate">{{ p.name }}</p>
-                                <p class="price-tag mb-1">₹{{ p.price }}</p>
-                                <small class="text-success fw-bold" style="font-size: 11px;">Free Delivery</small>
+                            <div class="card-body p-2">
+                                <h6 class="text-dark mb-1 text-truncate" style="font-size: 14px;">{{ p.name }}</h6>
+                                <p class="text-primary fw-bold mb-0">₹{{ p.price }}</p>
                             </div>
                         </a>
                         <div class="p-2 pt-0">
-                            <a href="{{ url_for('buy_now', id=p.id) }}" class="btn btn-buy w-100 py-2">BUY NOW</a>
+                            <a href="{{ url_for('buy_now', id=p.id) }}" class="btn btn-dark btn-sm w-100">BUY NOW</a>
                         </div>
                     </div>
                 </div>
                 {% endfor %}
             {% else %}
-                <div class="col-12 text-center py-5 bg-white rounded">
-                    <i class="fa fa-search fa-2x text-muted mb-3"></i>
-                    <p class="text-muted">No results found.</p>
+                <div class="col-12 text-center py-5">
+                    <p class="text-muted">No products available.</p>
                 </div>
             {% endif %}
         </div>
     </div>
 
-    <footer class="bg-dark text-white mt-5 py-4">
-        <div class="container text-center">
-            <p class="small mb-2">© 2025 Sahal's EVIA. All Rights Reserved.</p>
-            <div class="small text-muted">
-                <i class="fa fa-phone"></i> 7760463383 | 9686651918
-            </div>
-        </div>
+    <footer class="py-4 bg-white border-top text-center mt-5">
+        <p class="small text-muted mb-0">© 2025 EVIA SHOP | Helpline: 7760463383</p>
     </footer>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
