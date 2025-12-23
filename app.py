@@ -6,11 +6,14 @@ from werkzeug.security import generate_password_hash, check_password_hash
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'mysupersecretshop'
-basedir = os.path.abspath(os.path.dirname(__file__))
 
 # --- CONFIGURATION FIXES ---
-# 1. Changed extension to .db for better compatibility
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(basedir, 'shop.db')
+# This line now checks Render for the DATABASE_URL link first!
+database_url = os.getenv("DATABASE_URL")
+if database_url and database_url.startswith("postgres://"):
+    database_url = database_url.replace("postgres://", "postgresql://", 1) #
+
+app.config['SQLALCHEMY_DATABASE_URI'] = database_url or 'sqlite:///shop.db'
 app.config['UPLOAD_FOLDER'] = os.path.join('static', 'uploads')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
@@ -192,14 +195,8 @@ def cancel_order(id):
 
 # --- STARTUP ---
 if __name__ == '__main__':
-    # Ensure directories exist
-    if not os.path.exists(app.config['UPLOAD_FOLDER']): 
-        os.makedirs(app.config['UPLOAD_FOLDER'])
-    
-    # Setup Database
     with app.app_context(): 
-        db.create_all()
+        db.create_all() # This creates the tables in your evia-db
     
-    # Render Dynamic Port Binding
     port = int(os.environ.get("PORT", 10000))
     app.run(host='0.0.0.0', port=port)
