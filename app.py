@@ -7,8 +7,8 @@ from werkzeug.security import generate_password_hash, check_password_hash
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'mysupersecretshop'
 
-# --- CONFIGURATION FIXES ---
-# This line now checks Render for the DATABASE_URL link first!
+# --- CONFIGURATION ---
+# Check Render for the DATABASE_URL link
 database_url = os.getenv("DATABASE_URL")
 if database_url and database_url.startswith("postgres://"):
     database_url = database_url.replace("postgres://", "postgresql://", 1) #
@@ -48,6 +48,11 @@ class Order(db.Model):
 @login_manager.user_loader
 def load_user(user_id):
     return User.query.get(int(user_id))
+
+# --- DATABASE INITIALIZATION FIX ---
+# This block runs even when Gunicorn starts the app
+with app.app_context():
+    db.create_all() # This creates your tables in evia-db
 
 # --- ADMIN ROUTES ---
 @app.route('/admin_lock', methods=['GET', 'POST'])
@@ -193,10 +198,7 @@ def cancel_order(id):
         flash("Order cancelled.")
     return redirect(url_for('profile'))
 
-# --- STARTUP ---
 if __name__ == '__main__':
-    with app.app_context(): 
-        db.create_all() # This creates the tables in your evia-db
-    
     port = int(os.environ.get("PORT", 10000))
     app.run(host='0.0.0.0', port=port)
+
