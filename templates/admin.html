@@ -2,41 +2,64 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Dashboard | Control Center</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        body { background-color: #f4f7f6; }
-        .sidebar { background: #1a252f; min-height: 100vh; color: white; padding-top: 20px; position: fixed; width: inherit; }
-        .sidebar a { color: #bdc3c7; text-decoration: none; display: block; padding: 12px 20px; }
+        body { background-color: #f4f7f6; font-family: 'Inter', sans-serif; }
+        
+        /* Sidebar styling */
+        .sidebar { background: #1a252f; color: white; padding-top: 20px; transition: all 0.3s; z-index: 1000; }
+        .sidebar a { color: #bdc3c7; text-decoration: none; display: block; padding: 12px 20px; border-radius: 8px; margin: 0 10px 5px 10px; }
         .sidebar a:hover { background: #2c3e50; color: white; }
-        .admin-card { border: none; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 20px; }
-        .main-content { margin-left: 16.666%; } 
+        .sidebar .active { background: #3498db; color: white; }
+
+        /* DESKTOP VIEW (Screens wider than 768px) */
+        @media (min-width: 768px) {
+            .sidebar { position: fixed; width: 240px; height: 100vh; }
+            .main-content { margin-left: 240px; width: calc(100% - 240px); }
+        }
+
+        /* MOBILE VIEW (iPhone, Vivo, Android - 375px and up) */
+        @media (max-width: 767.98px) {
+            .sidebar { width: 100%; height: auto; position: relative; padding: 10px 0; }
+            .sidebar h4 { font-size: 1.1rem; margin-bottom: 10px !important; }
+            .sidebar-nav { display: flex; flex-wrap: nowrap; overflow-x: auto; padding: 0 10px; }
+            .sidebar a { white-space: nowrap; padding: 8px 15px; margin: 0 5px 0 0; font-size: 13px; flex: 0 0 auto; }
+            .main-content { margin-left: 0; padding: 15px !important; }
+            .admin-card { padding: 15px !important; }
+            h3 { font-size: 1.4rem; }
+        }
+
+        .admin-card { border: none; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); margin-bottom: 20px; background: white; }
+        .product-item-img { width: 100%; height: 90px; object-fit: contain; background: #f8f9fa; border-radius: 5px; }
     </style>
 </head>
 <body>
 
-<div class="container-fluid">
-    <div class="row">
-        <div class="col-md-2 sidebar d-none d-md-block">
+<div class="container-fluid p-0">
+    <div class="row g-0">
+        <div class="col-md-auto sidebar">
             <h4 class="text-center mb-4 text-warning"><i class="fa fa-user-shield"></i> Control Center</h4>
-            <a href="/"><i class="fa fa-home"></i> View Site</a>
-            <a href="#orders"><i class="fa fa-shopping-bag"></i> View Orders</a>
-            <a href="#products"><i class="fa fa-boxes"></i> Manage Inventory</a>
-            <hr>
-            <a href="/admin_logout" class="text-danger fw-bold"><i class="fa fa-lock"></i> LOCK DASHBOARD</a>
+            <div class="sidebar-nav">
+                <a href="/"><i class="fa fa-home"></i> View Site</a>
+                <a href="#orders"><i class="fa fa-shopping-bag"></i> Orders</a>
+                <a href="#products"><i class="fa fa-boxes"></i> Inventory</a>
+                <a href="/admin_logout" class="text-danger fw-bold"><i class="fa fa-lock"></i> Lock</a>
+            </div>
         </div>
 
-        <div class="col-md-10 p-4 main-content">
+        <div class="col main-content p-4">
             <div class="d-flex justify-content-between align-items-center mb-4">
-                <h3>Store Management</h3>
-                <span class="badge bg-success p-2">Verified Admin Access</span>
+                <h3 class="fw-bold m-0">Store Management</h3>
+                <span class="badge bg-success p-2">Admin Active</span>
             </div>
 
             {% with messages = get_flashed_messages() %}
               {% if messages %}
                 {% for message in messages %}
-                  <div class="alert alert-info alert-dismissible fade show" role="alert">
+                  <div class="alert alert-info alert-dismissible fade show border-0 shadow-sm" role="alert">
                     {{ message }}
                     <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                   </div>
@@ -45,33 +68,33 @@
             {% endwith %}
 
             <div class="row">
-                <div class="col-md-4">
+                <div class="col-lg-4">
                     <div class="card admin-card p-4">
-                        <h5 class="mb-3">Add New Product</h5>
+                        <h5 class="mb-3 fw-bold">Add New Product</h5>
                         <form action="/admin" method="POST">
                             <input type="text" name="name" class="form-control mb-2" placeholder="Product Name" required>
-                            <input type="number" name="price" class="form-control mb-2" placeholder="Price (INR)" required>
-                            <input type="number" name="stock" class="form-control mb-2" placeholder="Stock Quantity" required>
+                            <div class="row g-2 mb-2">
+                                <div class="col-6"><input type="number" name="price" class="form-control" placeholder="Price" required></div>
+                                <div class="col-6"><input type="number" name="stock" class="form-control" placeholder="Stock" required></div>
+                            </div>
                             <input type="text" name="category" class="form-control mb-2" placeholder="Category">
-                            
-                            <label class="small text-muted">Image URL (Use ImgBB Direct Link):</label>
-                            <input type="text" name="image_url" class="form-control mb-3" placeholder="https://i.ibb.co/example.jpg" required>
-                            
-                            <button class="btn btn-primary w-100">Publish to Store</button>
+                            <label class="small text-muted">Direct Image Link (i.ibb.co):</label>
+                            <input type="text" name="image_url" class="form-control mb-3" placeholder="https://i.ibb.co/..." required>
+                            <button class="btn btn-primary w-100 fw-bold">Publish to Store</button>
                         </form>
                     </div>
                 </div>
 
-                <div id="orders" class="col-md-8">
+                <div id="orders" class="col-lg-8">
                     <div class="card admin-card p-4">
-                        <h5 class="mb-3">Customer Orders (Full Details)</h5>
+                        <h5 class="mb-3 fw-bold">Recent Orders</h5>
                         <div class="table-responsive">
-                            <table class="table table-hover align-middle">
-                                <thead class="table-dark">
+                            <table class="table table-hover align-middle" style="min-width: 500px;">
+                                <thead class="table-light">
                                     <tr>
                                         <th>ID</th>
                                         <th>Customer</th>
-                                        <th>Full Order Summary</th>
+                                        <th>Details</th>
                                         <th>Total</th>
                                     </tr>
                                 </thead>
@@ -80,17 +103,11 @@
                                     <tr>
                                         <td>#{{ order.id }}</td>
                                         <td><strong>{{ order.customer.username }}</strong></td>
-                                        <td>
-                                            <div class="bg-light p-2 rounded border small">
-                                                {{ order.product_details }}
-                                            </div>
-                                        </td>
+                                        <td><small class="text-muted">{{ order.product_details }}</small></td>
                                         <td class="fw-bold text-success">₹{{ order.total_price }}</td>
                                     </tr>
                                     {% else %}
-                                    <tr>
-                                        <td colspan="4" class="text-center text-muted">No orders found yet.</td>
-                                    </tr>
+                                    <tr><td colspan="4" class="text-center text-muted">No orders found yet.</td></tr>
                                     {% endfor %}
                                 </tbody>
                             </table>
@@ -99,26 +116,22 @@
                 </div>
             </div>
 
-            <div id="products" class="row mt-4">
-                <div class="col-12">
-                    <div class="card admin-card p-4">
-                        <h5>Manage Live Products</h5>
-                        <hr>
-                        <div class="row">
-                            {% for p in products %}
-                            <div class="col-md-2 col-6 text-center mb-4">
-                                <div class="p-2 border rounded bg-white shadow-sm">
-                                    <img src="{{ p.image }}" class="rounded mb-2" style="width: 100%; height: 100px; object-fit: contain;" onerror="this.src='https://placehold.co/100x100?text=No+Image'">
-                                    <p class="small mb-1 text-truncate fw-bold">{{ p.name }}</p>
-                                    <a href="/delete/{{ p.id }}" class="btn btn-sm btn-danger w-100 py-1" onclick="return confirm('Delete this product?')">Delete</a>
-                                </div>
+            <div id="products" class="mt-2">
+                <div class="card admin-card p-4">
+                    <h5 class="fw-bold mb-3">Live Inventory</h5>
+                    <div class="row row-cols-2 row-cols-sm-3 row-cols-md-4 row-cols-lg-6 g-3">
+                        {% for p in products %}
+                        <div class="col text-center">
+                            <div class="p-2 border rounded h-100 d-flex flex-column">
+                                <img src="{{ p.image }}" class="product-item-img mb-2" onerror="this.src='https://placehold.co/100x100?text=Error'">
+                                <p class="small mb-2 text-truncate fw-bold">{{ p.name }}</p>
+                                <a href="/delete/{{ p.id }}" class="btn btn-sm btn-outline-danger w-100 mt-auto py-1" onclick="return confirm('Delete?')">Delete</a>
                             </div>
-                            {% endfor %}
                         </div>
+                        {% endfor %}
                     </div>
                 </div>
             </div>
-
         </div> 
     </div>
 </div>
