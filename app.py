@@ -51,13 +51,11 @@ def load_user(user_id):
 
 # --- DATABASE INITIALIZATION ---
 with app.app_context():
-    # IMPORTANT: To fix the "column does not exist" and "value too long" errors:
-    # 1. Remove the '#' from the line below (db.drop_all())
-    # 2. Deploy to Render and open the site once.
-    # 3. Put the '#' back and deploy again to keep your data.
-    # db.drop_all() 
+    # STEP 1: Remove the '#' below to clear the old broken database
+    db.drop_all() 
+    
+    # STEP 2: This creates the new tables with 'image_2' and 'description'
     db.create_all()
-
 # --- ADMIN ROUTES ---
 @app.route('/admin_lock', methods=['GET', 'POST'])
 def admin_lock():
@@ -195,3 +193,4 @@ def profile():
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 10000))
     app.run(host='0.0.0.0', port=port)
+
