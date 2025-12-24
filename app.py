@@ -19,14 +19,13 @@ db = SQLAlchemy(app)
 login_manager = LoginManager(app)
 login_manager.login_view = 'login'
 
-# --- ADMIN CONFIG ---
 ADMIN_SECRET_PASS = "razi1321"
 
 # --- MODELS ---
 class User(db.Model, UserMixin):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(150), unique=True, nullable=False) 
-    password = db.Column(db.String(500), nullable=False) # FIX: Increased size for hashed passwords
+    password = db.Column(db.String(500), nullable=False)
     orders = db.relationship('Order', backref='customer', lazy=True)
 
 class Product(db.Model):
@@ -34,8 +33,8 @@ class Product(db.Model):
     name = db.Column(db.String(100), nullable=False)
     price = db.Column(db.Integer, nullable=False)
     image = db.Column(db.String(500)) 
-    image_2 = db.Column(db.String(500)) # FIX: Now exists in code
-    description = db.Column(db.Text)    # FIX: Now exists in code
+    image_2 = db.Column(db.String(500))
+    description = db.Column(db.Text)    
     stock = db.Column(db.Integer, default=10)
     category = db.Column(db.String(50))
 
@@ -44,19 +43,19 @@ class Order(db.Model):
     product_details = db.Column(db.Text) 
     total_price = db.Column(db.Integer)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    # NEW: Status column for Admin notifications
+    status = db.Column(db.String(50), default="Placed")
 
 @login_manager.user_loader
 def load_user(user_id):
     return User.query.get(int(user_id))
 
-
 # --- DATABASE INITIALIZATION ---
 with app.app_context():
-    # Adding the '#' here is the most important part to save your data!
+    # UNCOMMENT the line below for ONE deploy to add the 'status' column, then comment it back.
     # db.drop_all() 
-    
-    # This line ensures your new image_2 and description columns stay active
     db.create_all()
+
 # --- ADMIN ROUTES ---
 @app.route('/admin_lock', methods=['GET', 'POST'])
 def admin_lock():
@@ -109,7 +108,7 @@ def delete_product(id):
             db.session.commit()
     return redirect(url_for('admin'))
 
-# --- USER SHOP ROUTES ---
+# --- USER ROUTES ---
 @app.route('/')
 def index():
     q = request.args.get('q')
@@ -117,42 +116,33 @@ def index():
     if q: query = query.filter(Product.name.contains(q))
     return render_template('index.html', products=query.all())
 
-@app.route('/product/<int:id>')
-def product_detail(id):
-    product = Product.query.get_or_404(id)
-    return render_template('product_detail.html', product=product)
-
-@app.route('/buy/<int:id>')
-def buy_now(id):
-    if not current_user.is_authenticated:
-        flash("Please login or signup to buy!")
-        return redirect(url_for('signup'))
-    session['cart'] = [id] 
-    return redirect(url_for('checkout'))
-
-@app.route('/checkout', methods=['GET', 'POST'])
+@app.route('/profile')
 @login_required
-def checkout():
-    cart_ids = session.get('cart', [])
-    items = [Product.query.get(i) for i in cart_ids if Product.query.get(i)]
-    total = sum(i.price for i in items)
+def profile():
+    my_orders = Order.query.filter_by(user_id=current_user.id).all()
+    return render_template('profile.html', orders=my_orders)
 
-    if request.method == 'POST':
-        addr = request.form.get('address')
-        pay_id = request.form.get('pay_number')
-        summary = f"ITEMS: {', '.join([i.name for i in items])} | CONTACT: {pay_id} | ADDR: {addr}"
-
-        new_order = Order(product_details=summary, total_price=total, user_id=current_user.id)
-        db.session.add(new_order)
+@app.route('/cancel_order/<int:id>')
+@login_required
+def cancel_order(id):
+    order = Order.query.get_or_404(id)
+    if order.user_id == current_user.id:
+        db.session.delete(order)
         db.session.commit()
-        
-        session.pop('cart', None)
-        flash("Order placed!")
-        return redirect(url_for('profile'))
+        flash("Order has been cancelled.")
+    return redirect(url_for('profile'))
 
-    return render_template('checkout.html', items=items, total=total)
+@app.route('/return_order/<int:id>')
+@login_required
+def return_order(id):
+    order = Order.query.get_or_404(id)
+    if order.user_id == current_user.id:
+        order.status = "Return Requested"
+        db.session.commit()
+        flash("Return request sent to Admin.")
+    return redirect(url_for('profile'))
 
-# --- AUTH ROUTES ---
+# --- AUTH & CHECKOUT ---
 @app.route('/signup', methods=['GET', 'POST'])
 def signup():
     if request.method == 'POST':
@@ -161,12 +151,10 @@ def signup():
         if User.query.filter_by(username=u).first():
             flash("Username already taken!")
             return redirect(url_for('signup'))
-        
         hashed_pw = generate_password_hash(p)
         new_user = User(username=u, password=hashed_pw)
         db.session.add(new_user)
         db.session.commit()
-        flash("Signup successful! Please login.")
         return redirect(url_for('login'))
     return render_template('signup.html')
 
@@ -185,28 +173,28 @@ def logout():
     logout_user()
     return redirect(url_for('index'))
 
-@app.route('/profile')
+@app.route('/buy/<int:id>')
+def buy_now(id):
+    if not current_user.is_authenticated:
+        return redirect(url_for('signup'))
+    session['cart'] = [id] 
+    return redirect(url_for('checkout'))
+
+@app.route('/checkout', methods=['GET', 'POST'])
 @login_required
-def profile():
-    my_orders = Order.query.filter_by(user_id=current_user.id).all()
-    return render_template('profile.html', orders=my_orders)
-   @app.route('/cancel_order/<int:id>')
-@login_required
-def cancel_order(id):
-    order = Order.query.get_or_404(id)
-    
-    # Security: Only allow the owner to cancel
-    if order.user_id == current_user.id:
-        db.session.delete(order)
+def checkout():
+    cart_ids = session.get('cart', [])
+    items = [Product.query.get(i) for i in cart_ids if Product.query.get(i)]
+    total = sum(i.price for i in items)
+    if request.method == 'POST':
+        summary = f"ITEMS: {', '.join([i.name for i in items])} | ADDR: {request.form.get('address')}"
+        new_order = Order(product_details=summary, total_price=total, user_id=current_user.id)
+        db.session.add(new_order)
         db.session.commit()
-        flash("Order has been cancelled.")
-    
-    # This RETURN sends the user back to the profile page
-    return redirect(url_for('profile')))
+        session.pop('cart', None)
+        return redirect(url_for('profile'))
+    return render_template('checkout.html', items=items, total=total)
 
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 10000))
     app.run(host='0.0.0.0', port=port)
-
-
-
