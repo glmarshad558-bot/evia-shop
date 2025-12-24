@@ -193,8 +193,15 @@ def checkout():
         return redirect(url_for('profile'))
     return render_template('checkout.html', items=items, total=total)
 
+@app.route('/product/<int:id>')
+def product_detail(id):
+    product = Product.query.get_or_404(id)
+    # The name below MUST match your filename exactly
+    return render_template('product_detail.html', product=product)
+
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 10000))
     app.run(host='0.0.0.0', port=port)
+
 
 
