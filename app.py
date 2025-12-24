@@ -190,9 +190,23 @@ def logout():
 def profile():
     my_orders = Order.query.filter_by(user_id=current_user.id).all()
     return render_template('profile.html', orders=my_orders)
+   @app.route('/cancel_order/<int:id>')
+@login_required
+def cancel_order(id):
+    order = Order.query.get_or_404(id)
+    
+    # Security: Only allow the owner to cancel
+    if order.user_id == current_user.id:
+        db.session.delete(order)
+        db.session.commit()
+        flash("Order has been cancelled.")
+    
+    # This RETURN sends the user back to the profile page
+    return redirect(url_for('profile')))
 
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 10000))
     app.run(host='0.0.0.0', port=port)
+
 
 
