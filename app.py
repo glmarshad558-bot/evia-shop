@@ -52,10 +52,9 @@ def load_user(user_id):
 
 # --- DATABASE INITIALIZATION ---
 with app.app_context():
-    # UNCOMMENT the line below for ONE deploy to add the 'status' column, then comment it back.
-    # db.drop_all() 
+    # REMOVE THE '#' FROM THE LINE BELOW:
+    db.drop_all() 
     db.create_all()
-
 # --- ADMIN ROUTES ---
 @app.route('/admin_lock', methods=['GET', 'POST'])
 def admin_lock():
@@ -198,3 +197,4 @@ def checkout():
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 10000))
     app.run(host='0.0.0.0', port=port)
+
