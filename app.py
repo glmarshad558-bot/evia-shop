@@ -49,11 +49,10 @@ class Order(db.Model):
 @login_manager.user_loader
 def load_user(user_id):
     return User.query.get(int(user_id))
-
 # --- DATABASE INITIALIZATION ---
 with app.app_context():
-    # REMOVE THE '#' FROM THE LINE BELOW:
-    db.drop_all() 
+    # Put the '#' back NOW to save your future data!
+    # db.drop_all() 
     db.create_all()
 # --- ADMIN ROUTES ---
 @app.route('/admin_lock', methods=['GET', 'POST'])
@@ -197,4 +196,5 @@ def checkout():
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 10000))
     app.run(host='0.0.0.0', port=port)
+
 
